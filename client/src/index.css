@@ -43,9 +43,13 @@
   --chart-3: 280 65% 47%;
   --chart-4: 43 74% 49%;
   --chart-5: 27 87% 55%;
-  --font-sans: Open Sans, sans-serif;
+  --temp-warm: 0 84% 55%;
+  --temp-cold: 207 89% 50%;
+  --temp-band: 207 30% 70%;
+  --temp-avg: 207 50% 55%;
+  --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
+  --font-mono: 'SF Mono', Monaco, monospace;
   --radius: .5rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
@@ -127,6 +131,10 @@
   --chart-3: 280 65% 68%;
   --chart-4: 43 74% 65%;
   --chart-5: 27 87% 67%;
+  --temp-warm: 0 84% 60%;
+  --temp-cold: 207 89% 60%;
+  --temp-band: 207 25% 35%;
+  --temp-avg: 207 50% 60%;
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 1px 2px -1px hsl(0 0% 0% / 0.00);

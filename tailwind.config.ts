@@ -59,6 +59,12 @@ export default {
           "4": "hsl(var(--chart-4) / <alpha-value>)",
           "5": "hsl(var(--chart-5) / <alpha-value>)",
         },
+        temp: {
+          warm: "hsl(var(--temp-warm) / <alpha-value>)",
+          cold: "hsl(var(--temp-cold) / <alpha-value>)",
+          band: "hsl(var(--temp-band) / <alpha-value>)",
+          avg: "hsl(var(--temp-avg) / <alpha-value>)",
+        },
         sidebar: {
           ring: "hsl(var(--sidebar-ring) / <alpha-value>)",
           DEFAULT: "hsl(var(--sidebar) / <alpha-value>)",
