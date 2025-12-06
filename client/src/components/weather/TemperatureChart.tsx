@@ -142,14 +142,14 @@ export function TemperatureChart({ data, unit }: TemperatureChartProps) {
             <Scatter
               dataKey="historicalMax"
               fill="hsl(var(--temp-warm))"
-              shape="star"
+              shape="circle"
               name="Record High"
             />
 
             <Scatter
               dataKey="historicalMin"
               fill="hsl(var(--temp-cold))"
-              shape="star"
+              shape="circle"
               name="Record Low"
             />
 
