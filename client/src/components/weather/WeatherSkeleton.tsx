@@ -42,6 +42,11 @@ export function ChartSkeleton() {
 export function WeatherSkeleton() {
   return (
     <div className="space-y-8">
+      <div className="text-center pt-8 pb-4">
+        <p className="text-muted-foreground text-lg animate-pulse">
+          Gathering weather data...
+        </p>
+      </div>
       <CurrentWeatherSkeleton />
       <ChartSkeleton />
       <DailyCardsSkeleton />
