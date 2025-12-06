@@ -105,30 +105,10 @@ export function TemperatureChart({ data, unit }: TemperatureChartProps) {
               axisLine={false}
               tickFormatter={(value) => `${value}°`}
               className="text-muted-foreground"
-              domain={["dataMin - 5", "dataMax + 5"]}
+              domain={[(dataMin: number) => Math.floor(dataMin - 5), (dataMax: number) => Math.ceil(dataMax + 5)]}
             />
             <Tooltip content={<CustomTooltip />} />
             
-            <Area
-              type="monotone"
-              dataKey="historicalMax"
-              stackId="range"
-              stroke="none"
-              fill="hsl(var(--temp-band))"
-              fillOpacity={0.3}
-              name="Historical Range"
-              legendType="none"
-            />
-            <Area
-              type="monotone"
-              dataKey="historicalMin"
-              stackId="range"
-              stroke="none"
-              fill="hsl(var(--background))"
-              fillOpacity={1}
-              legendType="none"
-            />
-
             <Line
               type="monotone"
               dataKey="historicalAvg"
