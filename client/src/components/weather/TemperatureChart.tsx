@@ -117,6 +117,7 @@ export function TemperatureChart({ data, unit }: TemperatureChartProps) {
               fill="hsl(var(--temp-band))"
               fillOpacity={0.3}
               name="Historical Range"
+              legendType="none"
             />
             <Area
               type="monotone"
@@ -125,6 +126,7 @@ export function TemperatureChart({ data, unit }: TemperatureChartProps) {
               stroke="none"
               fill="hsl(var(--background))"
               fillOpacity={1}
+              legendType="none"
             />
 
             <Line
