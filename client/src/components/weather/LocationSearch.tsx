@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,14 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Loader2, Navigation } from "lucide-react";
-
-interface Location {
-  id: string;
-  name: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-}
+import type { Location } from "@shared/schema";
 
 interface LocationSearchProps {
   open: boolean;
@@ -38,35 +31,57 @@ export function LocationSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Location[]>([]);
 
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
+  const searchLocations = useCallback(async (query: string) => {
     if (query.length < 2) {
       setSearchResults([]);
       return;
     }
 
     setIsSearching(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    
-    const mockResults: Location[] = [
-      { id: "1", name: "Seattle", country: "United States", latitude: 47.6062, longitude: -122.3321 },
-      { id: "2", name: "San Francisco", country: "United States", latitude: 37.7749, longitude: -122.4194 },
-      { id: "3", name: "New York", country: "United States", latitude: 40.7128, longitude: -74.006 },
-      { id: "4", name: "London", country: "United Kingdom", latitude: 51.5074, longitude: -0.1278 },
-      { id: "5", name: "Tokyo", country: "Japan", latitude: 35.6762, longitude: 139.6503 },
-    ].filter((loc) =>
-      loc.name.toLowerCase().includes(query.toLowerCase()) ||
-      loc.country.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    setSearchResults(mockResults);
-    setIsSearching(false);
-  };
+    try {
+      const response = await fetch(`/api/locations/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error("Search failed");
+      }
+      const locations: Location[] = await response.json();
+      setSearchResults(locations);
+    } catch (error) {
+      console.error("Location search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchLocations(searchQuery);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchLocations]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+      setSearchResults([]);
+    }
+  }, [open]);
 
   const handleLocationClick = (location: Location) => {
     onLocationSelect(location);
     setSearchQuery("");
     setSearchResults([]);
+  };
+
+  const formatLocationSubtext = (location: Location) => {
+    const parts = [];
+    if (location.admin1) {
+      parts.push(location.admin1);
+    }
+    if (location.country) {
+      parts.push(location.country);
+    }
+    return parts.join(", ");
   };
 
   return (
@@ -82,7 +97,7 @@ export function LocationSearch({
             <Input
               placeholder="Search city or coordinates..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
               data-testid="input-location-search"
               autoFocus
@@ -119,11 +134,17 @@ export function LocationSearch({
                   <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div>
                     <p className="font-medium text-sm">{location.name}</p>
-                    <p className="text-xs text-muted-foreground">{location.country}</p>
+                    <p className="text-xs text-muted-foreground">{formatLocationSubtext(location)}</p>
                   </div>
                 </button>
               ))}
             </div>
+          )}
+
+          {searchQuery.length >= 2 && !isSearching && searchResults.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-no-results">
+              No locations found for "{searchQuery}"
+            </p>
           )}
 
           {recentLocations.length > 0 && searchQuery.length === 0 && (
@@ -140,7 +161,7 @@ export function LocationSearch({
                     <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div>
                       <p className="font-medium text-sm">{location.name}</p>
-                      <p className="text-xs text-muted-foreground">{location.country}</p>
+                      <p className="text-xs text-muted-foreground">{formatLocationSubtext(location)}</p>
                     </div>
                   </button>
                 ))}

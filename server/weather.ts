@@ -205,12 +205,25 @@ async function fetchPastWeekActuals(lat: number, lon: number): Promise<Map<strin
 }
 
 // Generate narrative summary
-function generateNarrativeSummary(deviation: number, unit: "C" | "F"): string {
+function generateNarrativeSummary(deviation: number): string {
+  const today = new Date();
+  const month = format(today, "MMMM");
+  const dayOfMonth = today.getDate();
+  
+  let timeDescriptor: string;
+  if (dayOfMonth <= 10) {
+    timeDescriptor = `early ${month}`;
+  } else if (dayOfMonth <= 20) {
+    timeDescriptor = `mid-${month}`;
+  } else {
+    timeDescriptor = `late ${month}`;
+  }
+  
   const absDeviation = Math.abs(deviation);
   const direction = deviation > 0 ? "warmer" : "cooler";
   const intensity = absDeviation > 10 ? "significantly" : absDeviation > 5 ? "noticeably" : "slightly";
   
-  return `This week is running ${intensity} ${direction} than typical for early December, about ${absDeviation}°${unit} ${deviation > 0 ? "above" : "below"} average. Expect ${deviation > 0 ? "above" : "below"}-average temperatures through the week.`;
+  return `This week is running ${intensity} ${direction} than typical for ${timeDescriptor}, about ${absDeviation}°C ${deviation > 0 ? "above" : "below"} average. Expect ${deviation > 0 ? "above" : "below"}-average temperatures through the week.`;
 }
 
 // Get complete weather data for a location
@@ -309,7 +322,7 @@ export async function getWeatherData(lat: number, lon: number, locationName: str
     currentTemp: forecast.current.temperature_2m,
     feelsLike: forecast.current.apparent_temperature,
     deviation: Math.round(currentDeviation),
-    narrativeSummary: generateNarrativeSummary(Math.round(currentDeviation), "C"),
+    narrativeSummary: generateNarrativeSummary(Math.round(currentDeviation)),
     chartData,
     dailyForecast,
   };
