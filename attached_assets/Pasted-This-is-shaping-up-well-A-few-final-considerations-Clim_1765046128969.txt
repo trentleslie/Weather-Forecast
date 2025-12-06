@@ -1,0 +1,81 @@
+This is shaping up well. A few final considerations:
+
+## Climate API Clarification
+
+The Open-Meteo Climate API returns **model projections** (EC_Earth3P_HR is a climate simulation), not observational normals. For "how does today compare to historical reality," you likely want:
+
+| Source | What It Is | Best For |
+|--------|-----------|----------|
+| Archive API (1990-2020) | Actual measured temps | "What's normal for this date historically" |
+| Climate API | Model-based projections | Future climate scenarios |
+
+**Recommendation**: Use the archive API but constrain the date range smartly:
+```
+# Fetch just the last 30 years of data for ±7 days around current date
+# E.g., for June 15: fetch June 8-22 for years 1993-2023
+# Much smaller payload than full 30-year daily fetch
+```
+
+This gives you real observational normals without the massive data transfer.
+
+---
+
+## PostgreSQL Schema Suggestion
+
+```sql
+CREATE TABLE climate_normals (
+    id SERIAL PRIMARY KEY,
+    lat DECIMAL(6,3),          -- Rounded to ~100m precision
+    lon DECIMAL(6,3),
+    day_of_year SMALLINT,      -- 1-366
+    temp_avg DECIMAL(4,1),
+    temp_min_avg DECIMAL(4,1),
+    temp_max_avg DECIMAL(4,1),
+    computed_at TIMESTAMP,
+    UNIQUE(lat, lon, day_of_year)
+);
+
+-- Index for fast lookups
+CREATE INDEX idx_location_doy ON climate_normals(lat, lon, day_of_year);
+```
+
+Round lat/lon to 3 decimal places (~100m) so nearby searches hit cache.
+
+---
+
+## Past 7 Days Source
+
+Make sure the spec clarifies:
+- **Past 7 days actual temps** → Archive API (recent dates work)
+- **Next 7 days forecast** → Forecast API
+
+These are different endpoints:
+```
+# Recent actuals
+https://archive-api.open-meteo.com/v1/archive?...&start_date=2024-12-01&end_date=2024-12-06
+
+# Forecast
+https://api.open-meteo.com/v1/forecast?...&past_days=0&forecast_days=7
+```
+
+---
+
+## One UX Addition
+
+Consider adding a **"What's unusual" summary** in plain language:
+
+> "This week is running **6°F warmer** than typical for early December. Thursday's forecast high of 58°F would tie the record for this date."
+
+Turns data into narrative—users love this.
+
+---
+
+## Looks Good Otherwise
+
+The plan covers the critical paths. The combination of:
+- Recharts ComposedChart (Area + Line layering)
+- PostgreSQL caching with rounded coordinates
+- Skeleton states + retry logic
+- Timezone-aware API calls
+
+...should produce a polished result. 👍

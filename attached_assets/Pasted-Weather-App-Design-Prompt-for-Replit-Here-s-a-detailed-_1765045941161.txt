@@ -1,0 +1,100 @@
+Weather App Design Prompt for Replit
+Here's a detailed specification you can use to build this:
+
+Core Concept
+A weather visualization app that shows current conditions and forecasts in context by overlaying them against historical temperature normals—answering "is today warmer or colder than usual?"
+
+Recommended APIs (All Free)
+APIPurposeNotesOpen-MeteoCurrent, forecast, and historicalBest single-source option. No API key required. Has "climate normals" endpoint.Open-Meteo Historical30+ years of daily dataCalculate your own averages per day-of-yearGeocodingLocation → lat/lonOpen-Meteo includes this, or use Nominatim
+Open-Meteo is ideal because it provides current/forecast/historical from one source with consistent data formats and no rate limits.
+
+Key Visualizations
+1. Temperature Deviation Chart (Primary)
+         ┌─────────────────────────────────────────┐
+    90°F │            ░░░░░                        │ ← Historical high range
+         │         ░░░░░░░░░░░                     │
+    80°F │      ░░░░░░░░░░░░░░░░░   ●──●──●        │ ← Forecast (line + dots)
+         │   ░░░░░░░░░░░░░░░░░░░░░░░               │
+    70°F │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░             │ ← Historical avg (middle)
+         │   ░░░░░░░░░░░░░░░░░░░░░                 │
+    60°F │      ░░░░░░░░░░░░░░░                    │ ← Historical low range
+         │            ░░░░                         │
+         └─────────────────────────────────────────┘
+           -7d  -5d  -3d  -1d  NOW  +2d  +4d  +6d
+
+Shaded band: Historical min/max range for each day-of-year
+Center line: Historical average
+Bold line with markers: Actual observed temps (past week) + forecast (next week)
+Color coding: Red when above average, blue when below
+
+2. Daily Anomaly Cards
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│   TODAY     │  │   TOMORROW  │  │   SATURDAY  │
+│    78°F     │  │    82°F     │  │    75°F     │
+│   ▲ +6°     │  │   ▲ +9°     │  │   ▼ -2°     │
+│  above avg  │  │  above avg  │  │  below avg  │
+└─────────────┘  └─────────────┘  └─────────────┘
+3. Monthly Context Sparkline
+Show where today sits in the distribution of all historical temps for this month.
+
+Feature Specification
+Must-Have
+
+ Location search (city name or coordinates)
+ Current temperature with "deviation from normal" badge
+ 7-day forecast line overlaid on historical range
+ Responsive design (mobile-first)
+
+Should-Have
+
+ Toggle between °F and °C
+ Geolocation (browser API)
+ High/low temps for each day
+ Precipitation probability overlay
+ "Feels like" vs actual comparison
+
+Nice-to-Have
+
+ Multi-location comparison
+ Shareable URL with location encoded
+ "This day in history" fun facts (record highs/lows)
+ Seasonal trend animation
+
+
+Technical Architecture (Replit-friendly)
+┌─────────────────────────────────────────────────────┐
+│                    Frontend                         │
+│  React + Recharts (or vanilla JS + Chart.js)        │
+│  Tailwind CSS for styling                           │
+└─────────────────────┬───────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────┐
+│              API Aggregation Layer                  │
+│  Node.js/Express or Python/Flask                    │
+│  - Fetches from Open-Meteo                          │
+│  - Calculates historical averages                   │
+│  - Caches results (in-memory or Replit DB)          │
+└─────────────────────┬───────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────┐
+│              Open-Meteo APIs                        │
+│  • /v1/forecast                                     │
+│  • /v1/archive (historical)                         │
+│  • /v1/geocoding                                    │
+└─────────────────────────────────────────────────────┘
+
+Open-Meteo API Examples
+Current + Forecast:
+https://api.open-meteo.com/v1/forecast?latitude=47.6&longitude=-122.33&daily=temperature_2m_max,temperature_2m_min&current_weather=true&timezone=auto
+Historical (for calculating normals):
+https://archive-api.open-meteo.com/v1/archive?latitude=47.6&longitude=-122.33&start_date=1990-01-01&end_date=2020-12-31&daily=temperature_2m_max,temperature_2m_min
+To calculate "normal" for June 15: average all June 15 values from 1990–2020.
+
+Suggested Stack for Replit
+LayerRecommendationFrontendReact (Vite template) or vanilla HTML/JSChartsRecharts, Chart.js, or Plotly.jsStylingTailwind CSSBackendNode.js with Express (or skip if calling APIs directly)CachingReplit Database or in-memory Map
+
+Stretch Goals
+
+Climate trend visualization: Show how this year compares to the last 30 years
+Thermal comfort index: Combine temp + humidity + wind
+Gardening mode: Growing degree days, frost warnings relative to historical last-frost dates

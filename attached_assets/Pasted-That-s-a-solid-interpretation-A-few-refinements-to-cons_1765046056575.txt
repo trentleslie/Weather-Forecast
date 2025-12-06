@@ -1,0 +1,67 @@
+That's a solid interpretation. A few refinements to consider:
+
+## Historical Data Strategy (Critical)
+
+The 30-year archive fetch is the trickiest part. Clarify the approach:
+
+**Option A: On-demand with aggressive caching**
+- First request for Seattle → fetch 30 years → compute day-of-year averages → cache indefinitely
+- Problem: Initial request takes 10-30 seconds, Open-Meteo archive API can be slow
+
+**Option B: Pre-compute for popular cities**
+- Ship with cached normals for top 50-100 cities
+- Fall back to on-demand for others
+
+**Option C: Use climate normals endpoint**
+Open-Meteo has a newer climate API that returns pre-calculated normals:
+```
+https://climate-api.open-meteo.com/v1/climate?latitude=47.6&longitude=-122.33&start_date=2020-01-01&end_date=2020-12-31&models=EC_Earth3P_HR&daily=temperature_2m_mean
+```
+This avoids the heavy archive fetch entirely.
+
+---
+
+## Missing Pieces to Add
+
+| Feature | Why It Matters |
+|---------|----------------|
+| **Past 7 days actual temps** | Shows trend *into* the forecast—not just forecast vs. normal |
+| **Browser geolocation** | "Use my location" button is expected UX |
+| **Loading/error states** | API calls can fail or lag; show skeletons and retry options |
+| **Timezone handling** | Open-Meteo returns UTC by default; pass `timezone=auto` |
+
+---
+
+## In-Memory Cache Caveat
+
+Replit containers sleep after inactivity—in-memory cache gets wiped. Consider:
+
+- **Replit Database** (built-in key-value store, persists)
+- **File-based cache** (`data/cache.json`) if you want simpler debugging
+- Hybrid: in-memory for speed, persist to disk/DB on write
+
+---
+
+## Chart Implementation Note
+
+For the shaded historical range + forecast line overlay, make sure the charting library supports:
+- **Area charts with transparency** (for the min/max band)
+- **Composite/layered charts** (area beneath, line on top)
+
+Recharts handles this well with `<Area>` + `<Line>` in the same `<ComposedChart>`. Chart.js requires a bit more config.
+
+---
+
+## Suggested Additions to Spec
+
+```
+- [ ] "Use my location" button (browser Geolocation API)
+- [ ] Past 7 days observed temps (from archive API, recent dates)
+- [ ] Loading skeletons during API fetches
+- [ ] Graceful error handling with retry option
+- [ ] Persist cache to Replit DB or filesystem
+```
+
+---
+
+Want me to draft the specific API call sequence or a data flow diagram showing how the caching layer should work?
