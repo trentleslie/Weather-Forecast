@@ -6,6 +6,8 @@ import { DailyAnomalyCard } from "@/components/weather/DailyAnomalyCard";
 import { LocationSearch } from "@/components/weather/LocationSearch";
 import { WeatherSkeleton } from "@/components/weather/WeatherSkeleton";
 import { ErrorState } from "@/components/weather/ErrorState";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 interface Location {
   id: string;
@@ -176,6 +178,33 @@ export default function WeatherPage() {
                 ))}
               </div>
             </section>
+
+            <Collapsible className="mt-8 border-t pt-6" data-testid="collapsible-data-sources">
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2" data-testid="button-toggle-data-sources">
+                <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                <span>Data Sources & Technical Information</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <div className="space-y-4 text-sm text-muted-foreground">
+                  <div>
+                    <h4 className="font-medium text-foreground mb-1">Weather Forecast</h4>
+                    <p>Current conditions and 7-day forecast data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Open-Meteo</a> Forecast API. Updates hourly.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-foreground mb-1">Historical Normals</h4>
+                    <p>Climate normals calculated from 30+ years of historical data (1991-2020) via the Open-Meteo Historical Weather API. Daily averages represent the typical temperature range for each calendar day.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-foreground mb-1">Record Temperatures</h4>
+                    <p>Record high and low temperatures derived from the historical archive, showing the most extreme temperatures recorded for each date since 1940.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-foreground mb-1">Temperature Deviation</h4>
+                    <p>Deviation values show how current or forecast temperatures compare to the historical average for that date. Positive values indicate warmer than normal; negative values indicate cooler than normal.</p>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         )}
       </main>
