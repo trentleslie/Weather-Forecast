@@ -2,6 +2,7 @@ import {
   ComposedChart,
   Area,
   Line,
+  Scatter,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -18,6 +19,8 @@ interface ChartDataPoint {
   historicalMin: number;
   historicalMax: number;
   historicalAvg: number;
+  recordHighYear?: number;
+  recordLowYear?: number;
   actualTemp?: number;
   forecastTemp?: number;
   isToday?: boolean;
@@ -58,10 +61,20 @@ export function TemperatureChart({ data, unit }: TemperatureChartProps) {
             </p>
           )}
           {dataPoint && (
-            <p className="text-sm text-muted-foreground">
-              Range: {Math.round(dataPoint.historicalMin)}° -{" "}
-              {Math.round(dataPoint.historicalMax)}°
-            </p>
+            <div className="mt-2 pt-2 border-t border-popover-border space-y-1">
+              <p className="text-sm text-temp-warm">
+                Record high: {Math.round(dataPoint.historicalMax)}°{unit}
+                {dataPoint.recordHighYear && (
+                  <span className="text-muted-foreground ml-1">({dataPoint.recordHighYear})</span>
+                )}
+              </p>
+              <p className="text-sm text-temp-cold">
+                Record low: {Math.round(dataPoint.historicalMin)}°{unit}
+                {dataPoint.recordLowYear && (
+                  <span className="text-muted-foreground ml-1">({dataPoint.recordLowYear})</span>
+                )}
+              </p>
+            </div>
           )}
         </div>
       );
@@ -122,6 +135,20 @@ export function TemperatureChart({ data, unit }: TemperatureChartProps) {
               strokeDasharray="5 5"
               dot={false}
               name="Historical Avg"
+            />
+
+            <Scatter
+              dataKey="historicalMax"
+              fill="hsl(var(--temp-warm))"
+              shape="star"
+              name="Record High"
+            />
+
+            <Scatter
+              dataKey="historicalMin"
+              fill="hsl(var(--temp-cold))"
+              shape="star"
+              name="Record Low"
             />
 
             <Line
