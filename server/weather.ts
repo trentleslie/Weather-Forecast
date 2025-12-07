@@ -1,4 +1,5 @@
 import { format, subDays, addDays, getDayOfYear, parseISO } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 import type { Location, ChartDataPoint, DailyForecast, WeatherResponse } from "@shared/schema";
 
 const OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast";
@@ -6,6 +7,7 @@ const OPEN_METEO_ARCHIVE = "https://archive-api.open-meteo.com/v1/archive";
 const OPEN_METEO_GEOCODING = "https://geocoding-api.open-meteo.com/v1/search";
 
 interface ForecastResponse {
+  timezone: string;
   current: {
     temperature_2m: number;
     apparent_temperature: number;
@@ -180,13 +182,14 @@ async function calculateHistoricalNormals(
 }
 
 // Fetch past week's actual temperatures (mean, high, low)
-async function fetchPastWeekActuals(lat: number, lon: number): Promise<Map<string, { mean: number; high: number; low: number }>> {
+async function fetchPastWeekActuals(lat: number, lon: number, timezone: string): Promise<Map<string, { mean: number; high: number; low: number }>> {
   const actuals = new Map<string, { mean: number; high: number; low: number }>();
-  const today = new Date();
-  const weekAgo = subDays(today, 7);
+  // Use location's timezone to determine "today"
+  const locationNow = toZonedTime(new Date(), timezone);
+  const weekAgo = subDays(locationNow, 7);
 
   const startDate = format(weekAgo, "yyyy-MM-dd");
-  const endDate = format(subDays(today, 1), "yyyy-MM-dd");
+  const endDate = format(subDays(locationNow, 1), "yyyy-MM-dd");
 
   try {
     const data = await fetchHistoricalData(lat, lon, startDate, endDate);
@@ -208,10 +211,11 @@ async function fetchPastWeekActuals(lat: number, lon: number): Promise<Map<strin
 }
 
 // Generate narrative summary
-function generateNarrativeSummary(deviation: number): string {
-  const today = new Date();
-  const month = format(today, "MMMM");
-  const dayOfMonth = today.getDate();
+function generateNarrativeSummary(deviation: number, timezone: string): string {
+  // Use location's timezone for the narrative
+  const locationNow = toZonedTime(new Date(), timezone);
+  const month = format(locationNow, "MMMM");
+  const dayOfMonth = locationNow.getDate();
   
   let timeDescriptor: string;
   if (dayOfMonth <= 10) {
@@ -231,18 +235,22 @@ function generateNarrativeSummary(deviation: number): string {
 
 // Get complete weather data for a location
 export async function getWeatherData(lat: number, lon: number, locationName: string, country: string): Promise<WeatherResponse> {
-  const today = new Date();
-  
+  // First fetch forecast to get the location's timezone
+  const forecast = await fetchForecast(lat, lon);
+  const timezone = forecast.timezone;
+
+  // Use location's timezone to determine "today"
+  const locationNow = toZonedTime(new Date(), timezone);
+
   // Generate date range: past 5 days + today + next 6 days = 12 days
   const dates: Date[] = [];
   for (let i = -5; i <= 6; i++) {
-    dates.push(addDays(today, i));
+    dates.push(addDays(locationNow, i));
   }
-  
-  // Fetch all data in parallel where possible
-  const [forecast, pastWeekActuals, historicalNormals] = await Promise.all([
-    fetchForecast(lat, lon),
-    fetchPastWeekActuals(lat, lon),
+
+  // Fetch remaining data in parallel
+  const [pastWeekActuals, historicalNormals] = await Promise.all([
+    fetchPastWeekActuals(lat, lon, timezone),
     calculateHistoricalNormals(lat, lon, dates),
   ]);
   
@@ -331,9 +339,9 @@ export async function getWeatherData(lat: number, lon: number, locationName: str
   }
   
   // Calculate overall deviation
-  const todayNormal = historicalNormals.get(format(today, "yyyy-MM-dd"));
+  const todayNormal = historicalNormals.get(format(locationNow, "yyyy-MM-dd"));
   const currentDeviation = todayNormal ? forecast.current.temperature_2m - todayNormal.avg : 0;
-  
+
   return {
     location: {
       id: `${lat},${lon}`,
@@ -345,7 +353,7 @@ export async function getWeatherData(lat: number, lon: number, locationName: str
     currentTemp: forecast.current.temperature_2m,
     feelsLike: forecast.current.apparent_temperature,
     deviation: Math.round(currentDeviation),
-    narrativeSummary: generateNarrativeSummary(Math.round(currentDeviation)),
+    narrativeSummary: generateNarrativeSummary(Math.round(currentDeviation), timezone),
     chartData,
     dailyForecast,
   };
