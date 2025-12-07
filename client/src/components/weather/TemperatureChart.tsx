@@ -22,13 +22,52 @@ interface ChartDataPoint {
   recordHighYear?: number;
   recordLowYear?: number;
   actualTemp?: number;
+  actualHigh?: number;
+  actualLow?: number;
   forecastTemp?: number;
+  forecastHigh?: number;
+  forecastLow?: number;
   isToday?: boolean;
 }
 
 interface TemperatureChartProps {
   data: ChartDataPoint[];
   unit: "F" | "C";
+}
+
+// Custom shape for rendering vertical range lines (actual - solid)
+function ActualRangeLine({ cx, cy, payload, yAxis }: any) {
+  if (payload.actualHigh === undefined || payload.actualLow === undefined) return null;
+  const yHigh = yAxis.scale(payload.actualHigh);
+  const yLow = yAxis.scale(payload.actualLow);
+  return (
+    <line
+      x1={cx}
+      y1={yHigh}
+      x2={cx}
+      y2={yLow}
+      stroke="hsl(var(--foreground))"
+      strokeWidth={2.5}
+    />
+  );
+}
+
+// Custom shape for rendering vertical range lines (forecast - dashed)
+function ForecastRangeLine({ cx, cy, payload, yAxis }: any) {
+  if (payload.forecastHigh === undefined || payload.forecastLow === undefined) return null;
+  const yHigh = yAxis.scale(payload.forecastHigh);
+  const yLow = yAxis.scale(payload.forecastLow);
+  return (
+    <line
+      x1={cx}
+      y1={yHigh}
+      x2={cx}
+      y2={yLow}
+      stroke="hsl(var(--foreground))"
+      strokeWidth={2.5}
+      strokeDasharray="3 3"
+    />
+  );
 }
 
 export function TemperatureChart({ data, unit }: TemperatureChartProps) {
@@ -131,6 +170,18 @@ export function TemperatureChart({ data, unit }: TemperatureChartProps) {
               fill="hsl(var(--temp-cold))"
               shape="circle"
               name="Record Low"
+            />
+
+            {/* Range lines rendered before dots so they appear behind */}
+            <Scatter
+              dataKey="actualTemp"
+              shape={<ActualRangeLine />}
+              legendType="none"
+            />
+            <Scatter
+              dataKey="forecastTemp"
+              shape={<ForecastRangeLine />}
+              legendType="none"
             />
 
             <Line

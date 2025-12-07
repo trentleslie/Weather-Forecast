@@ -179,28 +179,31 @@ async function calculateHistoricalNormals(
   return normals;
 }
 
-// Fetch past week's actual temperatures
-async function fetchPastWeekActuals(lat: number, lon: number): Promise<Map<string, number>> {
-  const actuals = new Map<string, number>();
+// Fetch past week's actual temperatures (mean, high, low)
+async function fetchPastWeekActuals(lat: number, lon: number): Promise<Map<string, { mean: number; high: number; low: number }>> {
+  const actuals = new Map<string, { mean: number; high: number; low: number }>();
   const today = new Date();
   const weekAgo = subDays(today, 7);
-  
+
   const startDate = format(weekAgo, "yyyy-MM-dd");
   const endDate = format(subDays(today, 1), "yyyy-MM-dd");
-  
+
   try {
     const data = await fetchHistoricalData(lat, lon, startDate, endDate);
-    
+
     if (data.daily) {
       for (let i = 0; i < data.daily.time.length; i++) {
-        // Use mean temperature as the "actual"
-        actuals.set(data.daily.time[i], data.daily.temperature_2m_mean[i]);
+        actuals.set(data.daily.time[i], {
+          mean: data.daily.temperature_2m_mean[i],
+          high: data.daily.temperature_2m_max[i],
+          low: data.daily.temperature_2m_min[i],
+        });
       }
     }
   } catch (err) {
     console.error("Failed to fetch past week data:", err);
   }
-  
+
   return actuals;
 }
 
@@ -249,26 +252,42 @@ export async function getWeatherData(lat: number, lon: number, locationName: str
     const displayDate = format(date, "MMM d");
     const isToday = index === 5; // 5 days ago means index 5 is today
     const isPast = index < 5;
-    
+
     const normal = historicalNormals.get(dateStr) || { avg: 0, min: 0, max: 0 };
-    
+    const forecastIndex = forecast.daily.time.indexOf(dateStr);
+
     // Get actual temp from past data or current
     let actualTemp: number | undefined;
+    let actualHigh: number | undefined;
+    let actualLow: number | undefined;
     if (isPast) {
-      actualTemp = pastWeekActuals.get(dateStr);
+      const pastData = pastWeekActuals.get(dateStr);
+      if (pastData) {
+        actualTemp = pastData.mean;
+        actualHigh = pastData.high;
+        actualLow = pastData.low;
+      }
     } else if (isToday) {
       actualTemp = forecast.current.temperature_2m;
-    }
-    
-    // Get forecast temp for future days
-    let forecastTemp: number | undefined;
-    if (!isPast && !isToday) {
-      const forecastIndex = forecast.daily.time.indexOf(dateStr);
+      // Use today's forecast high/low for the range
       if (forecastIndex >= 0) {
-        forecastTemp = (forecast.daily.temperature_2m_max[forecastIndex] + forecast.daily.temperature_2m_min[forecastIndex]) / 2;
+        actualHigh = forecast.daily.temperature_2m_max[forecastIndex];
+        actualLow = forecast.daily.temperature_2m_min[forecastIndex];
       }
     }
-    
+
+    // Get forecast temp for future days
+    let forecastTemp: number | undefined;
+    let forecastHigh: number | undefined;
+    let forecastLow: number | undefined;
+    if (!isPast && !isToday) {
+      if (forecastIndex >= 0) {
+        forecastTemp = (forecast.daily.temperature_2m_max[forecastIndex] + forecast.daily.temperature_2m_min[forecastIndex]) / 2;
+        forecastHigh = forecast.daily.temperature_2m_max[forecastIndex];
+        forecastLow = forecast.daily.temperature_2m_min[forecastIndex];
+      }
+    }
+
     return {
       date: dateStr,
       displayDate,
@@ -278,7 +297,11 @@ export async function getWeatherData(lat: number, lon: number, locationName: str
       recordHighYear: normal.recordHighYear,
       recordLowYear: normal.recordLowYear,
       actualTemp,
+      actualHigh,
+      actualLow,
       forecastTemp,
+      forecastHigh,
+      forecastLow,
       isToday,
     };
   });

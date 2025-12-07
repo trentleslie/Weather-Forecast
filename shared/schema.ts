@@ -76,7 +76,11 @@ export const chartDataPointSchema = z.object({
   recordHighYear: z.number().optional(),
   recordLowYear: z.number().optional(),
   actualTemp: z.number().optional(),
+  actualHigh: z.number().optional(),
+  actualLow: z.number().optional(),
   forecastTemp: z.number().optional(),
+  forecastHigh: z.number().optional(),
+  forecastLow: z.number().optional(),
   isToday: z.boolean().optional(),
 });
 

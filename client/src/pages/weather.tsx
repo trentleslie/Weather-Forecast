@@ -183,7 +183,11 @@ export default function WeatherPage() {
     recordHighYear: d.recordHighYear,
     recordLowYear: d.recordLowYear,
     actualTemp: d.actualTemp !== undefined ? convertTemp(d.actualTemp) : undefined,
+    actualHigh: d.actualHigh !== undefined ? convertTemp(d.actualHigh) : undefined,
+    actualLow: d.actualLow !== undefined ? convertTemp(d.actualLow) : undefined,
     forecastTemp: d.forecastTemp !== undefined ? convertTemp(d.forecastTemp) : undefined,
+    forecastHigh: d.forecastHigh !== undefined ? convertTemp(d.forecastHigh) : undefined,
+    forecastLow: d.forecastLow !== undefined ? convertTemp(d.forecastLow) : undefined,
   }));
 
   const dailyForecastConverted = weatherData.dailyForecast.map((d) => ({
